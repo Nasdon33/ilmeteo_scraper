@@ -3,5 +3,4 @@ This is a small code that retrieve historical weather data from the Italian webs
 Not every location will have historical data so expect to don't get each city results.
 
 TODO:
-- Fix search of cities with special characters such as "L'Aquila"
-- Keep track of cities not found so that you don't have to manually look for the missing locations.
+- Fix search of cities with accents such as "Paternò". Space and hyphens work fine.

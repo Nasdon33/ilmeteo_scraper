@@ -3,9 +3,11 @@ import pandas as pd
 
 # Import list of Italian provinces (you can manipulate this part in order to
 # search for other cities)
-province = pd.read_csv("province-sigle.csv", encoding = "ISO-8859-1",
-                       header = None)[[0]].values
-prov = list(el[0] for el in province)
+biggest_municipalities = pd.read_csv("municipalities.csv")
+municipalities = list(biggest_municipalities.Comune)
+#province = pd.read_csv("province-sigle.csv", encoding = "ISO-8859-1",
+#                       header = None)[[0]].values
+#prov = list(el[0] for el in province)
 
 # Insert the list of yy/mm you want to scrap, if you want to have many years
 # you can also use two lists one for years and one for the months
@@ -25,34 +27,40 @@ def get_historic_weather(city, ym = True, year = "2020/Gennaio", month = None):
         "?format=csv"
     return URL
 
-tabella = ""
-b = False
-city = True
-# Loop for each province
-for p in prov:
+def get_csv(municipalities, ym = True, year = "2020/Gennaio", month = None):
+    table = ""
+    b = False
     city = True
-    # Loop for each combination yy/mm. Use two loops if you want the two
-    # separate lists
-    for ym in year_months:
-        # Do the request only if the city has a csv download or it is the first
-        #  attempt
-        if city == True:
-            # Request the csv download. Pass province and yy/mm to get the url.
-            # If using two lists pass get_historic_weather(p, ym = False,
-            #                                              year = y, month = m)
-            url = get_historic_weather(p, year = ym)
-            tmp = requests.get(url, allow_redirects=True)
-            # Check if the csv file was found
-            if (str(tmp.content[0:1]) != "b'<'"):
-                if b == False:
-                    tabella = tmp.content
-                    b = True
+    not_existing_cities = []
+    # Loop for each province
+    for c in municipalities:
+        city = True
+        # Loop for each combination yy/mm. Use two loops if you want the two
+        # separate lists
+        for ym in year_months:
+            # Do the request only if the city has a csv download or it is the
+            # first attempt
+            if city == True:
+                # Request the csv download. Pass province and yy/mm to get the
+                # url. If using two lists pass
+                # get_historic_weather(c, ym = False, year = y, month = m)
+                url = get_historic_weather(c, year = ym)
+                tmp = requests.get(url, allow_redirects=True)
+                # Check if the csv file was found
+                if (str(tmp.content[0:1]) != "b'<'"):
+                    if b == False:
+                        table = tmp.content
+                        b = True
+                    else:
+                        # If it is not the first csv to unpack you need to remove
+                        # the headers
+                        table += tmp.content[182:]
                 else:
-                    # If it is not the first csv to unpack you need to remove
-                    # the headers
-                    tabella += tmp.content[182:]
-            else:
-                city= False
+                    not_existing_cities.append(c)
+                    city= False
+    return (table, not_existing_cities)
+
+table, not_included = get_csv(municipalities, year_months)
 
 # Save csv file
-open('meteoItalianProvinces.csv', 'wb').write(tabella)
+open('meteoItalianCities.csv', 'wb').write(table)
